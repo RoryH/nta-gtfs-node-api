@@ -1,0 +1,54 @@
+{
+  "name": "tfiapi2021",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint ./src --ext .ts",
+    "watch": "npm run build -- --w",
+    "download-gtfs": "curl https://www.transportforireland.ie/transitData/google_transit_combined.zip > ./google_transit_combined.zip && rm last-update.json",
+    "dev:server": "nodemon dist/index.js",
+    "debug:server": "node --experimental-specifier-resolution=node --inspect-brk dist/index.js",
+    "start:dev": "npm-run-all build -p watch dev:server"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@flowio/is": "^0.0.5",
+    "@types/lodash": "^4.14.176",
+    "express": "^4.17.1",
+    "geolib": "^3.3.3",
+    "gtfs": "^3.2.1",
+    "lodash": "^4.17.21",
+    "moment-timezone": "^0.5.34",
+    "node-cron": "^3.0.0",
+    "node-fetch": "^3.1.0",
+    "sqlite": "^4.0.23",
+    "sqlite3": "^5.0.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.13",
+    "@types/node-cron": "^3.0.0",
+    "@types/sqlite3": "^3.1.7",
+    "@typescript-eslint/eslint-plugin": "^5.3.1",
+    "@typescript-eslint/parser": "^5.3.1",
+    "eslint": "^8.2.0",
+    "nodemon": "^2.0.14",
+    "npm-run-all": "^4.1.5",
+    "ts-node": "^10.4.0",
+    "typescript": "^4.4.4"
+  },
+  "eslintConfig": {
+    "root": true,
+    "parser": "@typescript-eslint/parser",
+    "plugins": [
+      "@typescript-eslint"
+    ],
+    "extends": [
+      "eslint:recommended",
+      "plugin:@typescript-eslint/recommended"
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "verbose": true,
+  "execMap": {
+    "js": "node --experimental-specifier-resolution=node"
+  },
+  "events": {
+    "restart": "osascript -e 'display notification \"App restarted due to:\n'$FILENAME'\" with title \"nodemon\"'"
+  },
+  "watch": [
+    "dist/*"
+  ],
+  "env": {
+    "NODE_ENV": "development"
+  },
+  "ext": "js,json"
+}

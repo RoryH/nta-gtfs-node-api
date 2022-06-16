@@ -1,0 +1,4 @@
+node_modules
+dist
+google_transit_combined.zip
+db.sqlite
