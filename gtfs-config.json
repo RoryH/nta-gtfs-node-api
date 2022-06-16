@@ -1,7 +1,7 @@
 {
   "agencies": [
     {
-      "path": "https://www.transportforireland.ie/transitData/google_transit_combined.zip"
+      "url": "https://www.transportforireland.ie/transitData/google_transit_combined.zip"
     }
   ],
   "sqlitePath": "db.sqlite"
