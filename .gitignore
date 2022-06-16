@@ -3,3 +3,4 @@ dist
 google_transit_combined.zip
 db.sqlite
 last-update.json
+gtfs-realtime-cache.json
