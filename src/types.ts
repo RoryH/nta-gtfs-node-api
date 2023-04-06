@@ -10,6 +10,7 @@ type ScheduleRelationship = 'SCHEDULED' | 'SKIPPED' | 'NO_DATA';
 export type GtfsConfig = {
     agencies: GtfsAgency[];
     sqlitePath: string;
+    verbose: boolean;
 }
 
 type GtfsRealtimeTripUpdate = {

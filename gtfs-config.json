@@ -4,5 +4,6 @@
       "url": "https://www.transportforireland.ie/transitData/google_transit_combined.zip"
     }
   ],
-  "sqlitePath": "db.sqlite"
+  "sqlitePath": "db.sqlite",
+  "verbose": false
 }
