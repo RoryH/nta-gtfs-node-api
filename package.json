@@ -9,6 +9,7 @@
     "dev:server": "nodemon dist/index.js",
     "debug:server": "node --experimental-specifier-resolution=node --inspect-brk dist/index.js",
     "lint": "eslint ./src --ext .ts",
+    "start": "node --experimental-specifier-resolution=node dist/index.js",
     "start:dev": "npm-run-all build -p watch dev:server",
     "watch": "tsc --w"
   },
