@@ -1,19 +1,18 @@
 import sqlite3 from 'sqlite3';
 import { open, Database } from 'sqlite';
-import { getAgencies } from 'gtfs';
 import express from 'express';
 import cron from 'node-cron';
-import sortBy from 'lodash/sortBy';
 import { existsSync } from 'fs';
+import cors from 'cors';
 
 import maybeImportGtfs from './import-gtfs';
 import { readFile } from 'fs/promises';
-import { GtfsConfig, GtfsRealtimeFeed, StopsByRouteApiResult, StopsByRouteQueryResult, StopTimesApiResult, TypedResponse } from './types';
-import { isNil, isString } from '@flowio/is';
-import { getRoutes, getRouteTimezone, getStopsByRoute, getStopTimes } from './queries';
+import { GtfsConfig, GtfsRealtimeFeed, RealtimeStore } from './types';
+import { isNil } from '@flowio/is';
+import { getRoutes } from './queries';
 import { refreshRealtimeData } from './realtime';
-import { APP_CONFIG_ROUTE_ID_MAP, GTFS_REALTIME_CACHE_FILENAME, SERVER_PORT } from './constants';
-import { augmentStopTimesWithRealtime } from './utilities';
+import { APP_CONFIG_ROUTE_ID_MAP, GTFS_REALTIME_CACHE_FILENAME } from './constants';
+import { initApi } from './api';
 
 async function openDb(config: GtfsConfig) {
   sqlite3.verbose();
@@ -35,70 +34,6 @@ async function openDb(config: GtfsConfig) {
   return db;
 }
 
-async function initApi(db: Database, app: express.Application, rts: RealtimeStore) {
-  app.get('/getAgencies', async function (req, res) {
-    res.json(await getAgencies());
-  });
-
-  app.get('/getStopsByRoute', async function (req: express.Request, res: TypedResponse<StopsByRouteApiResult>) {
-    if (isString(req.query.route)) {
-      const results = await getStopsByRoute(getRouteId(app, req.query.route), db);
-      const reduced = results.reduce<StopsByRouteQueryResult[][]>((acc, stop) => {
-        acc[stop.direction_id].push(stop);
-        return acc;
-      }, [[], []]);
-
-      res.json({
-        route_id: getRouteId(app, req.query.route),
-        route_short_name: req.query.route,
-        directions: reduced.map((direction) => sortBy(direction, ['stop_sequence'])),
-      });
-      return;
-    }
-    res.status(422).json({ error: 'Missing parameter [route]' });
-    return;
-  });
-
-  app.get('/getStopTimes', async function(req: express.Request, res: TypedResponse<StopTimesApiResult>) {
-    if (isString(req.query.stop_id) && isString(req.query.route)) {
-      let routeTimezone: string | undefined;
-      try {
-        routeTimezone = await getRouteTimezone(getRouteId(app,req.query.route), db);
-      }
-      catch(e: unknown) {
-        res.status(500).send({ error: e instanceof Error? e.message : '/getStopTimes is broken.' });
-        return;
-      }
-
-      if (isNil(routeTimezone)) {
-        res.status(500).send({ error: 'Failed to determine route timezone.' });
-        return;
-      }
-
-      const result = await getStopTimes(db, getRouteId(app, req.query.route), req.query.stop_id);
-      const formattedTimes = augmentStopTimesWithRealtime(result, rts.get(), routeTimezone);
-      if (isNil(formattedTimes)) {
-        res.status(404).json({ error: 'NO_TIMES_FOUND' });
-      }
-      res.json(augmentStopTimesWithRealtime(result, rts.get(), routeTimezone));
-      return;
-    }
-    res.status(422).json({ error: 'Missing parameters [stop_id] and/or [route]' });
-    return;
-  });
-
-  app.get('/rt', async function(req, res) {
-    res.json(rts.get());
-  });
-
-  app.listen(SERVER_PORT);
-}
-
-type RealtimeStore = {
-  set: (data: GtfsRealtimeFeed) => void;
-  get: () => GtfsRealtimeFeed;
-}
-
 function initRealtimeStore(app: express.Application): RealtimeStore {
   return {
     set: (data: GtfsRealtimeFeed) => {
@@ -118,10 +53,6 @@ async function initRouteLookupCache(db: Database, app: express.Application) {
     }, {}));
     console.log('set application routes lookup table');
   });
-}
-
-function getRouteId(app: express.Application, routeShortName: string) {
-  return app.get(APP_CONFIG_ROUTE_ID_MAP)[routeShortName];
 }
 
 async function fetchRealtimeData(store: RealtimeStore) {
@@ -153,6 +84,7 @@ async function init() {
   await maybeImportGtfs(config);
   const db = await openDb(config);
   const app = express();
+  app.use(cors())
   initRouteLookupCache(db, app);
   const realtimeStore = initRealtimeStore(app);
   // fetch on startup

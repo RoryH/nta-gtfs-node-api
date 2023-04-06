@@ -1,6 +1,11 @@
 import { Response } from 'express';
 import { Send } from 'express-serve-static-core';
 
+export type RealtimeStore = {
+    set: (data: GtfsRealtimeFeed) => void;
+    get: () => GtfsRealtimeFeed;
+}
+
 type GtfsAgency = {
     path: string;
 }
