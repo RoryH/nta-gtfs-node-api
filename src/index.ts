@@ -1,7 +1,7 @@
 import sqlite3 from 'sqlite3';
 import { open, Database } from 'sqlite';
 import express from 'express';
-import cron from 'node-cron';
+import Cron from 'croner';
 import { existsSync } from 'fs';
 import cors from 'cors';
 
@@ -71,7 +71,7 @@ function initCron(store: RealtimeStore) {
       store.set(JSON.parse(data));
     });
   }
-  cron.schedule('* * * * *', async () => {
+  Cron('0 * * * * *', () => {
     fetchRealtimeData(store);
   });
 }
@@ -92,7 +92,7 @@ async function init() {
   setTimeout(() => {
     // run after 1 min as otherwise API will rate limit call.
     initCron(realtimeStore);
-  }, 1000);
+  }, 30000);
   initApi(db, app, realtimeStore);
 }
 
