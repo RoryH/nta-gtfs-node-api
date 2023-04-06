@@ -155,7 +155,12 @@ async function init() {
   const app = express();
   initRouteLookupCache(db, app);
   const realtimeStore = initRealtimeStore(app);
-  initCron(realtimeStore);
+  // fetch on startup
+  fetchRealtimeData(realtimeStore);
+  setTimeout(() => {
+    // run after 1 min as otherwise API will rate limit call.
+    initCron(realtimeStore);
+  }, 1000);
   initApi(db, app, realtimeStore);
 }
 

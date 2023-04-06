@@ -9,6 +9,7 @@
   "watch": [
     "dist/*"
   ],
+  "runOnChangeOnly": true,
   "env": {
     "NODE_ENV": "development"
   },
