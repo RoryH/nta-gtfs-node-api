@@ -22,7 +22,6 @@ export function getShortRouteName(app: express.Application, routeId: string) {
 
 function getStopTimeUpdates(time: StopTimesQueryResult, rt: GtfsRealtimeFeed): GtfsRealtimeStopTimeUpdate[] {
   const tripUpdates = rt.entity.filter((entity) => {
-    console.log(`Update route id: ${entity.trip_update?.trip.route_id}`);
     return isNotNil(entity.trip_update) ? entity.trip_update.trip.trip_id === time.trip_id : false;
   });
 
