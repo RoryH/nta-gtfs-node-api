@@ -98,7 +98,13 @@ export type StopsByRouteApiResult = {
  export type RoutesQueryResult = {
     route_id: string;
     route_short_name: string;
+    agency_name: string;
 };
+
+export type AppCacheRouteEntry = {
+    id: string;
+    agency: string;
+}
 
 type ErrorResponse = {
     error: string;

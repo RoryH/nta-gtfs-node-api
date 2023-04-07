@@ -1,12 +1,28 @@
 import { isNil, isNotNil } from '@flowio/is';
+import express from 'express';
 import sortBy from 'lodash/sortBy';
 import moment from 'moment-timezone';
 import type { GtfsRealtimeFeed, GtfsRealtimeStopTimeUpdate, StopTime, StopTimesApiResult, StopTimesQueryResult } from './types';
+import { APP_CONFIG_ROUTE_ID_MAP } from './constants';
 
-// type StopTimesResult
+export function getRouteId(app: express.Application, routeShortName: string) {
+  return app.get(APP_CONFIG_ROUTE_ID_MAP)[routeShortName].id;
+}
+
+export function getShortRouteName(app: express.Application, routeId: string) {
+  const found = Object.entries<string>(app.get(APP_CONFIG_ROUTE_ID_MAP)).find(([, id]) => {
+    return id === routeId
+  });
+  if (isNotNil(found)) {
+    return found[0];
+  }
+  console.warn(`Could not find route short name for route id: ${routeId}`);
+  return undefined;
+}
 
 function getStopTimeUpdates(time: StopTimesQueryResult, rt: GtfsRealtimeFeed): GtfsRealtimeStopTimeUpdate[] {
   const tripUpdates = rt.entity.filter((entity) => {
+    console.log(`Update route id: ${entity.trip_update?.trip.route_id}`);
     return isNotNil(entity.trip_update) ? entity.trip_update.trip.trip_id === time.trip_id : false;
   });
 

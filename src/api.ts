@@ -1,7 +1,8 @@
 import express from 'express';
-import { isNil, isString } from '@flowio/is';
-import { getRouteTimezone, getStopTimes, getStopsByRoute } from './queries';
+import { isNil, isNotNil, isString } from '@flowio/is';
+import { getRouteTimezone, getStopTimes, getStopsByRoute, getRoutes } from './queries';
 import {
+  AppCacheRouteEntry,
   type RealtimeStore,
   type StopTimesApiResult,
   type StopsByRouteApiResult,
@@ -9,14 +10,10 @@ import {
   type TypedResponse,
 } from './types';
 import { type Database } from 'sqlite';
-import { augmentStopTimesWithRealtime } from './utilities';
-import { APP_CONFIG_ROUTE_ID_MAP, SERVER_PORT } from './constants';
+import { augmentStopTimesWithRealtime, getRouteId, getShortRouteName } from './utilities';
+import { SERVER_PORT } from './constants';
 import sortBy from 'lodash/sortBy';
 import { getAgencies } from 'gtfs';
-
-function getRouteId(app: express.Application, routeShortName: string) {
-  return app.get(APP_CONFIG_ROUTE_ID_MAP)[routeShortName];
-}
 
 export async function initApi(db: Database, app: express.Application, rts: RealtimeStore) {
   app.get('/getAgencies', async function (req, res) {
@@ -25,7 +22,7 @@ export async function initApi(db: Database, app: express.Application, rts: Realt
 
   app.get('/getStopsByRoute', async function (req: express.Request, res: TypedResponse<StopsByRouteApiResult>) {
     if (isString(req.query.route)) {
-      const results = await getStopsByRoute(getRouteId(app, req.query.route), db);
+      const results = await getStopsByRoute(getRouteId(app, req.query.route.toUpperCase()), db);
       const reduced = results.reduce<StopsByRouteQueryResult[][]>((acc, stop) => {
         acc[stop.direction_id].push(stop);
         return acc;
@@ -46,7 +43,7 @@ export async function initApi(db: Database, app: express.Application, rts: Realt
     if (isString(req.query.stop_id) && isString(req.query.route)) {
       let routeTimezone: string | undefined;
       try {
-        routeTimezone = await getRouteTimezone(getRouteId(app,req.query.route), db);
+        routeTimezone = await getRouteTimezone(getRouteId(app,req.query.route.toUpperCase()), db);
       }
       catch(e: unknown) {
         res.status(500).send({ error: e instanceof Error? e.message : '/getStopTimes is broken.' });
@@ -58,7 +55,7 @@ export async function initApi(db: Database, app: express.Application, rts: Realt
         return;
       }
 
-      const result = await getStopTimes(db, getRouteId(app, req.query.route), req.query.stop_id);
+      const result = await getStopTimes(db, getRouteId(app, req.query.route.toUpperCase()), req.query.stop_id);
       const formattedTimes = augmentStopTimesWithRealtime(result, rts.get(), routeTimezone);
       if (isNil(formattedTimes)) {
         res.status(404).json({ error: 'NO_TIMES_FOUND' });
@@ -70,9 +67,39 @@ export async function initApi(db: Database, app: express.Application, rts: Realt
     return;
   });
 
+  app.get('/getRealTimeSummary', async function(req: express.Request, res: express.Response) {
+    const rt = rts.get();
+    res.send(rt.entity.reduce((acc, entity) => {
+      const tripUpdate = entity.trip_update;
+      if (isNotNil(tripUpdate)) {
+        const timeUpdate = tripUpdate.stop_time_update;
+        if (isNotNil(timeUpdate)) {
+          const shortRouteId = getShortRouteName(app, tripUpdate.trip.route_id);
+          if (isNotNil(shortRouteId)) {
+            acc[shortRouteId] = [
+              ...(acc[shortRouteId] || []),
+              tripUpdate.trip.trip_id,
+            ];
+          }
+        }
+      }
+      return acc;
+    }, {} as Record<string, string[]>));
+  });
+
   app.get('/rt', async function(req, res) {
     res.json(rts.get());
   });
+
+  app.get('/getRoutes', async function(req, res) {
+    res.send((await getRoutes(db)).reduce<Record<string, AppCacheRouteEntry>>((acc, routeEntry) => {
+      acc[routeEntry.route_short_name] = {
+        id: routeEntry.route_id,
+        agency: routeEntry.agency_name,
+      };
+      return acc;
+    }, {}));
+  })
 
   app.listen(SERVER_PORT);
 }

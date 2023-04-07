@@ -20,18 +20,17 @@ export async function refreshRealtimeData(): Promise<GtfsRealtimeFeed | undefine
   if (isNil(apiKey)) {
     throw new Error('NTA_API_KEY is not set');
   }
-  return fetch('https://api.nationaltransport.ie/gtfsr/v2/gtfsr?format=json',
+  return fetch('https://api.nationaltransport.ie/gtfsr/v2/TripUpdates?format=json',
   {
     method: 'GET',
     headers: {
       'x-api-key': apiKey,
     }
   }).then((resp) => {
-    console.log(`fetched, status: ${resp.status}`)
     if (resp.ok) {
       return resp.json();
     } else {
-      throw new Error('Error fetching Real-time data');
+      throw new Error(`Error fetching Real-time data, status: ${resp.status}`);
     }
   }).then((body: unknown) => {
     if (isGtfsRealtimeFeed(body)) {
@@ -40,7 +39,9 @@ export async function refreshRealtimeData(): Promise<GtfsRealtimeFeed | undefine
         routeId: entity.trip_update?.trip.route_id,
         stopIds: entity.trip_update?.stop_time_update?.map((stopTimeUpdate) => stopTimeUpdate.stop_id),
       }))); */
-      console.log('Successfully updated real-time data.');
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Successfully updated real-time data.');
+      }
       return body;
     } else {
       throw new Error('Unknown data format returned');

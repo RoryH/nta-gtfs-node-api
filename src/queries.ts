@@ -62,6 +62,6 @@ export const getStopTimes = async function(db: Database, routeId: string, stopId
 
 export const getRoutes = async function(db: Database) {
   return await db.all<RoutesQueryResult[]>(`
-    SELECT r.route_id, r.route_short_name from routes r;
+    SELECT r.route_id, r.route_short_name, a.agency_name from routes AS r JOIN agency as a ON a.agency_id = r.agency_id;
   `);
 }

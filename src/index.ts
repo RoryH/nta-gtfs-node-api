@@ -7,7 +7,7 @@ import cors from 'cors';
 
 import maybeImportGtfs from './import-gtfs';
 import { readFile } from 'fs/promises';
-import { GtfsConfig, GtfsRealtimeFeed, RealtimeStore } from './types';
+import { AppCacheRouteEntry, GtfsConfig, GtfsRealtimeFeed, RealtimeStore } from './types';
 import { isNil } from '@flowio/is';
 import { getRoutes } from './queries';
 import { refreshRealtimeData } from './realtime';
@@ -46,9 +46,12 @@ function initRealtimeStore(app: express.Application): RealtimeStore {
 }
 
 async function initRouteLookupCache(db: Database, app: express.Application) {
-  return getRoutes(db).then((routes) => {
-    app.set(APP_CONFIG_ROUTE_ID_MAP, routes.reduce<Record<string, string>>((acc, routeEntry) => {
-      acc[routeEntry.route_short_name] = routeEntry.route_id;
+  return await getRoutes(db).then((routes) => {
+    app.set(APP_CONFIG_ROUTE_ID_MAP, routes.reduce<Record<string, AppCacheRouteEntry>>((acc, routeEntry) => {
+      acc[routeEntry.route_short_name] = {
+        id: routeEntry.route_id,
+        agency: routeEntry.agency_name,
+      };
       return acc;
     }, {}));
     console.log('set application routes lookup table');
@@ -71,28 +74,31 @@ function initCron(store: RealtimeStore) {
       store.set(JSON.parse(data));
     });
   }
-  Cron('0 * * * * *', () => {
-    fetchRealtimeData(store);
-  });
+  setTimeout(() => {
+    // run after 1 min as otherwise API will rate limit call.
+    Cron('0 * * * * *', () => {
+      fetchRealtimeData(store);
+    });
+  }, 60000);
 }
 
 
 async function init() {
-  const config: GtfsConfig = JSON.parse(
-    await readFile('./gtfs-config.json', 'utf8'),
-  );
+  const config: GtfsConfig = {
+    verbose: process.env.NODE_ENV !== 'production',
+    ...JSON.parse(
+      await readFile('./gtfs-config.json', 'utf8'),
+    ),
+  };
   await maybeImportGtfs(config);
   const db = await openDb(config);
   const app = express();
   app.use(cors())
-  initRouteLookupCache(db, app);
+  await initRouteLookupCache(db, app);
   const realtimeStore = initRealtimeStore(app);
   // fetch on startup
   fetchRealtimeData(realtimeStore);
-  setTimeout(() => {
-    // run after 1 min as otherwise API will rate limit call.
-    initCron(realtimeStore);
-  }, 30000);
+  initCron(realtimeStore);
   initApi(db, app, realtimeStore);
 }
 
