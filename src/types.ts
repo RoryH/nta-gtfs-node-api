@@ -65,17 +65,19 @@ export type StopTimesQueryResult = {
     route_id: number;
     stop_id: string;
     trip_id: string;
+    trip_headsign: string;
     service_id: string;
     stop_sequence: number;
 };
 
-export type StopTimesApiResult = Omit<StopTimesQueryResult, 'scheduled_departure_time' | 'trip_id'> & {
+export type StopTimesApiResult = Omit<StopTimesQueryResult, 'scheduled_departure_time' | 'trip_id' | 'trip_headsign'> & {
     times: StopTime[];
 }
 
 export type StopTime = Pick<StopTimesQueryResult, 'scheduled_departure_time'> & {
     departure_mins: number;
     trip_id: string;
+    destination: string;
     realtime_offset?: number;
 };
 

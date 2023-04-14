@@ -78,6 +78,7 @@ export function augmentStopTimesWithRealtime(
         trip_id: time.trip_id,
         scheduled_departure_time: time.scheduled_departure_time,
         departure_mins: departureTime.diff(moment().tz(timezone), 'minutes'),
+        destination: time.trip_headsign,
         realtime_offset: hasRealtimeUpdate ? delay : undefined,
       };
     }).filter((stopTime: StopTime) => {
