@@ -42,7 +42,7 @@ export const getStopTimes = async function(db: Database, routeId: string, stopId
     const dayOfWeek = moment().tz(timezone).format('dddd').toLowerCase();
     const todaysDate = moment().tz(timezone).format('YYYYMMDD').toLowerCase();
     return await db.all<StopTimesQueryResult[]>(`
-      SELECT DISTINCT st.departure_time as scheduled_departure_time, s.stop_name, t.route_id, st.stop_sequence, st.stop_id, t.trip_id, t.trip_headsign
+      SELECT DISTINCT st.departure_time as scheduled_departure_time, s.stop_name, s.stop_code, t.route_id, st.stop_sequence, st.stop_id, t.trip_id, t.trip_headsign
         FROM trips AS t
       JOIN calendar AS c ON c.service_id = t.service_id AND c.${dayOfWeek} = 1
       JOIN calendar_dates AS cd on cd.service_id = t.service_id AND cd.service_id NOT IN (

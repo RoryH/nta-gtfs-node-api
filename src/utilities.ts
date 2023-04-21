@@ -87,6 +87,7 @@ export function augmentStopTimesWithRealtime(
 
     return {
       stop_name: times[0].stop_name,
+      stop_code: times[0].stop_code,
       route_id: times[0].route_id,
       stop_sequence: times[0].stop_sequence,
       stop_id: times[0].stop_id,

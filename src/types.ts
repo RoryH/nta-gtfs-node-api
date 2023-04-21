@@ -62,6 +62,7 @@ export type GtfsRealtimeFeed = {
 export type StopTimesQueryResult = {
     scheduled_departure_time: string;
     stop_name: string;
+    stop_code: string;
     route_id: number;
     stop_id: string;
     trip_id: string;
