@@ -21,7 +21,7 @@ export const getRouteTimezone = memoize(async (routeId: string, db: Database) =>
 
 export const getStopsByRoute = memoize(async function(routeId: string, db: Database) {
     return await db.all<StopsByRouteQueryResult[]>(`
-    SELECT s.stop_id, s.stop_name, s.stop_lat, s.stop_lon, st.stop_sequence, t.direction_id
+    SELECT s.stop_id, s.stop_code, s.stop_name, s.stop_lat, s.stop_lon, st.stop_sequence, t.direction_id
     FROM trips AS t
     JOIN
     stop_times AS st

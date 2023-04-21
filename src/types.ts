@@ -84,6 +84,7 @@ export type StopTime = Pick<StopTimesQueryResult, 'scheduled_departure_time'> & 
 
 export type StopsByRouteQueryResult = {
     stop_id: string;
+    stop_code: string;
     stop_name: string;
     stop_lat: number;
     stop_lon: number;
